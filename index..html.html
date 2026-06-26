@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>¿Cuánto sabes sobre el cerebro humano?</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #1A0A2E;
+    --card:    #2D1B69;
+    --accent:  #7C3AED;
+    --accent2: #A855F7;
+    --yellow:  #F59E0B;
+    --green:   #10B981;
+    --red:     #EF4444;
+    --white:   #FFFFFF;
+    --light:   #E9D5FF;
+    --muted:   #C4B5FD;
+  }
+
+  body {
+    min-height: 100vh;
+    background: radial-gradient(ellipse at top left, #2D1B69 0%, #1A0A2E 40%, #0F0520 100%);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: var(--white);
+  }
+
+  /* ── BLOBS decorativos ── */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 420px; height: 420px; background: var(--accent); top: -120px; right: -80px; }
+  .blob-2 { width: 320px; height: 320px; background: var(--accent2); bottom: -60px; left: -80px; }
+
+  /* ── CONTENEDOR PRINCIPAL ── */
+  #app {
+    width: 100%;
+    max-width: 640px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── PANTALLAS ── */
+  .screen { display: none; animation: fadeUp .4s ease both; }
+  .screen.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ────────────────────────────
+     PORTADA
+  ──────────────────────────── */
+  #screen-cover { text-align: center; }
+
+  .cover-brain {
+    font-size: 80px;
+    display: block;
+    margin: 0 auto 20px;
+    filter: drop-shadow(0 0 28px #7C3AED99);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.08); }
+  }
+
+  .cover-title {
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .cover-title span { color: var(--accent2); }
+
+  .cover-sub {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 36px;
+  }
+
+  .pill-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+  .pill {
+    background: rgba(124,58,237,.2);
+    border: 1px solid rgba(168,85,247,.4);
+    border-radius: 50px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ────────────────────────────
+     QUIZ
+  ──────────────────────────── */
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .progress-label { color: var(--accent2); font-weight: 700; font-size: 14px; }
+  .score-label    { color: var(--muted); font-size: 14px; }
+
+  .progress-bar-bg {
+    background: var(--card);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .4s ease;
+  }
+
+  .dots-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .dot {
+    width: 22px; height: 8px;
+    border-radius: 4px;
+    background: var(--card);
+    transition: background .3s;
+  }
+  .dot.current  { background: var(--accent); }
+  .dot.correct  { background: var(--green); }
+  .dot.wrong    { background: var(--red); }
+
+  /* Tarjeta pregunta */
+  .q-card {
+    background: rgba(45,27,105,.65);
+    border: 1px solid rgba(124,58,237,.4);
+    border-radius: 20px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(12px);
+  }
+  .q-emoji { font-size: 30px; margin-bottom: 10px; display: block; }
+  .q-number {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 50px;
+    margin-bottom: 12px;
+  }
+  .q-text {
+    font-size: clamp(16px, 3vw, 20px);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--white);
+  }
+
+  /* Opciones */
+  .options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(45,27,105,.5);
+    border: 1.5px solid rgba(124,58,237,.35);
+    border-radius: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .2s, border-color .2s, transform .15s;
+    width: 100%;
+    color: var(--light);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+  }
+  .opt-btn:hover:not(:disabled) {
+    background: rgba(124,58,237,.28);
+    border-color: rgba(168,85,247,.7);
+    transform: translateX(3px);
+  }
+  .opt-btn:disabled { cursor: default; transform: none; }
+
+  .opt-btn.correct-ans {
+    background: rgba(16,185,129,.18);
+    border-color: var(--green);
+    color: #6EE7B7;
+    transform: scale(1.02);
+  }
+  .opt-btn.wrong-ans {
+    background: rgba(239,68,68,.15);
+    border-color: var(--red);
+    color: #FCA5A5;
+  }
+
+  .opt-label {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(124,58,237,.5);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px;
+    flex-shrink: 0;
+    transition: background .25s;
+  }
+  .correct-ans .opt-label { background: var(--green); color: #fff; }
+  .wrong-ans   .opt-label { background: var(--red);   color: #fff; }
+
+  /* Feedback */
+  .feedback {
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    display: none;
+    animation: fadeUp .3s ease;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok   { background: rgba(16,185,129,.12); border: 1px solid var(--green); color: #6EE7B7; }
+  .feedback.fail { background: rgba(239,68,68,.12);  border: 1px solid var(--red);   color: #FCA5A5; }
+
+  /* ────────────────────────────
+     RESULTADO
+  ──────────────────────────── */
+  #screen-result { text-align: center; }
+
+  .result-trophy { font-size: 72px; display: block; margin-bottom: 14px; }
+
+  .result-title {
+    font-size: 32px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .result-sub {
+    color: var(--muted);
+    font-size: 16px;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .score-ring {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    background: rgba(124,58,237,.2);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+    transition: border-color .3s;
+  }
+  .score-ring-number {
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .score-ring-label { font-size: 14px; font-weight: 600; color: var(--accent2); }
+
+  .score-msg {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 28px;
+  }
+
+  /* Breakdown */
+  .breakdown {
+    background: rgba(45,27,105,.5);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+    text-align: left;
+  }
+  .breakdown-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 14px;
+  }
+  .breakdown-dots { display: flex; flex-wrap: wrap; gap: 8px; }
+  .bd-dot {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    border: 1.5px solid transparent;
+  }
+  .bd-dot.c { background: rgba(16,185,129,.18); border-color: var(--green); color: var(--green); }
+  .bd-dot.w { background: rgba(239,68,68,.18);  border-color: var(--red);   color: var(--red); }
+
+  /* ── BOTONES GLOBALES ── */
+  .btn-primary {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 48px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 28px rgba(124,58,237,.45);
+    transition: transform .15s, box-shadow .15s;
+    font-family: inherit;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 36px rgba(124,58,237,.6);
+  }
+  .btn-primary:active { transform: scale(.97); }
+
+  .btn-next {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(124,58,237,.4);
+    transition: transform .15s, box-shadow .15s;
+    font-family: inherit;
+    display: none;
+    animation: fadeUp .3s ease;
+  }
+  .btn-next.show { display: block; }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(124,58,237,.55); }
+
+  /* ── UTILIDADES ── */
+  .mt-8  { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    body { padding: 12px; }
+    .q-card { padding: 18px 16px; }
+    .opt-btn { padding: 12px 14px; font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- blobs -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div id="app">
+
+  <!-- ══ PORTADA ══ -->
+  <div id="screen-cover" class="screen active">
+    <span class="cover-brain">🧠</span>
+    <h1 class="cover-title">
+      ¿Cuánto sabes sobre el<br>
+      <span>cerebro humano?</span>
+    </h1>
+    <p class="cover-sub">
+      Descubre los secretos del órgano más increíble del cuerpo.<br>
+      Pon a prueba tus conocimientos con este desafío.
+    </p>
+    <div class="pill-row">
+      <span class="pill">🔟 Preguntas</span>
+      <span class="pill">⚡ Retroalimentación inmediata</span>
+      <span class="pill">🏆 Puntaje final</span>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">Comenzar →</button>
+  </div>
+
+  <!-- ══ QUIZ ══ -->
+  <div id="screen-quiz" class="screen">
+    <!-- Progreso -->
+    <div class="progress-header">
+      <span class="progress-label" id="prog-label">Pregunta 1 de 10</span>
+      <span class="score-label"  id="score-label">✅ 0 correctas</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="prog-bar" style="width:0%"></div>
+    </div>
+    <div class="dots-row" id="dots-row"></div>
+
+    <!-- Tarjeta pregunta -->
+    <div class="q-card">
+      <span class="q-number" id="q-number">P 1/10</span>
+      <span class="q-emoji"  id="q-emoji"></span>
+      <p class="q-text"      id="q-text"></p>
+    </div>
+
+    <!-- Opciones -->
+    <div class="options" id="options"></div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback"></div>
+
+    <!-- Siguiente -->
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">
+      Siguiente pregunta →
+    </button>
+  </div>
+
+  <!-- ══ RESULTADO ══ -->
+  <div id="screen-result" class="screen">
+    <span class="result-trophy">🏆</span>
+    <h2 class="result-title">¡Felicidades!</h2>
+    <p class="result-sub">Has terminado el desafío sobre el cerebro humano</p>
+
+    <div class="score-ring" id="result-ring">
+      <span class="score-ring-number" id="result-score">0</span>
+      <span class="score-ring-label">de 10</span>
+    </div>
+
+    <p class="score-msg" id="result-msg"></p>
+
+    <div class="breakdown">
+      <div class="breakdown-title">Resumen de respuestas</div>
+      <div class="breakdown-dots" id="bd-dots"></div>
+    </div>
+
+    <button class="btn-primary" onclick="restartQuiz()">🔄 Volver a jugar</button>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+const QUESTIONS = [
+  {
+    q: "¿Cuántas neuronas tiene aproximadamente el cerebro humano?",
+    opts: ["10 millones", "86 mil millones", "500 millones"],
+    correct: 1,
+    ok:   "¡Exacto! El cerebro humano tiene alrededor de 86 mil millones de neuronas.",
+    fail: "¡Casi! El cerebro tiene muchísimas más neuronas de las que imaginas.",
+    emoji: "🔬"
+  },
+  {
+    q: "¿Qué porcentaje de oxígeno consume el cerebro?",
+    opts: ["5%", "10%", "20%"],
+    correct: 2,
+    ok:   "¡Muy bien! Aunque no lo parezca, el cerebro consume una gran cantidad de oxígeno.",
+    fail: "¡Buen intento! El cerebro necesita mucho oxígeno para funcionar correctamente.",
+    emoji: "💨"
+  },
+  {
+    q: "¿Cuál es el órgano que controla todo el cuerpo?",
+    opts: ["Corazón", "Cerebro", "Pulmones"],
+    correct: 1,
+    ok:   "¡Correcto! El cerebro coordina la mayoría de las funciones del cuerpo.",
+    fail: "¡No pasa nada! El cerebro es el centro de control principal del organismo.",
+    emoji: "🧬"
+  },
+  {
+    q: "¿Qué lado del cerebro se relaciona más con la creatividad?",
+    opts: ["Derecho", "Izquierdo", "Ambos exactamente igual"],
+    correct: 0,
+    ok:   "¡Bien hecho! El hemisferio derecho suele asociarse con la creatividad.",
+    fail: "¡Interesante! El lado derecho del cerebro se vincula más con la imaginación.",
+    emoji: "🎨"
+  },
+  {
+    q: "¿Cuántos hemisferios tiene el cerebro?",
+    opts: ["Uno", "Dos", "Cuatro"],
+    correct: 1,
+    ok:   "¡Exacto! El cerebro se divide en dos hemisferios principales.",
+    fail: "¡Casi! El cerebro tiene dos hemisferios que trabajan en equipo.",
+    emoji: "⚖️"
+  },
+  {
+    q: "¿Qué ocurre mientras dormimos?",
+    opts: ["El cerebro se apaga completamente", "El cerebro sigue trabajando", "El cerebro deja de enviar señales"],
+    correct: 1,
+    ok:   "¡Así es! Mientras dormimos, el cerebro sigue activo y organizando información.",
+    fail: "¡Buen intento! Aunque descansamos, el cerebro no deja de trabajar.",
+    emoji: "😴"
+  },
+  {
+    q: "¿Cuál de estos hábitos ayuda al cerebro?",
+    opts: ["Dormir bien", "No desayunar", "Pasar toda la noche despierto"],
+    correct: 0,
+    ok:   "¡Muy bien! Dormir bien ayuda a que el cerebro funcione mejor.",
+    fail: "¡No te preocupes! Descansar bien es clave para cuidar el cerebro.",
+    emoji: "🛌"
+  },
+  {
+    q: "¿Cuál es la parte más grande del cerebro?",
+    opts: ["Cerebelo", "Corteza cerebral", "Tronco encefálico"],
+    correct: 1,
+    ok:   "¡Excelente! La corteza cerebral es la parte más grande del cerebro.",
+    fail: "¡Casi! La corteza cerebral ocupa la mayor parte del cerebro.",
+    emoji: "🧩"
+  },
+  {
+    q: "¿A qué edad deja el cerebro de aprender?",
+    opts: ["A los 18 años", "A los 30 años", "Nunca deja de aprender"],
+    correct: 2,
+    ok:   "¡Exacto! El cerebro puede seguir aprendiendo durante toda la vida.",
+    fail: "¡Muy cerca! El cerebro tiene la capacidad de aprender siempre.",
+    emoji: "📚"
+  },
+  {
+    q: "¿Cuántos sentidos procesa el cerebro?",
+    opts: ["Solo cinco", "Más de cinco", "Solo tres"],
+    correct: 1,
+    ok:   "¡Genial! El cerebro procesa más información sensorial de la que solemos notar.",
+    fail: "¡Buen intento! El cerebro interpreta más de cinco sentidos.",
+    emoji: "👁️"
+  }
+];
+
+const LABELS = ["A", "B", "C"];
+
+let current = 0;
+let score   = 0;
+let answers = [];
+let answered = false;
+
+/* ── Helpers ── */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // force reflow so animation replays
+  const el = document.getElementById(id);
+  el.classList.remove('active');
+  void el.offsetWidth;
+  el.classList.add('active');
+}
+
+/* ── Portada → Quiz ── */
+function startQuiz() {
+  current  = 0;
+  score    = 0;
+  answers  = [];
+  answered = false;
+  show('screen-quiz');
+  renderQuestion();
+}
+
+/* ── Renderizar pregunta ── */
+function renderQuestion() {
+  answered = false;
+  const q = QUESTIONS[current];
+
+  document.getElementById('prog-label').textContent = `Pregunta ${current+1} de ${QUESTIONS.length}`;
+  document.getElementById('score-label').textContent = `✅ ${score} correctas`;
+  document.getElementById('prog-bar').style.width = `${(current / QUESTIONS.length) * 100}%`;
+  document.getElementById('q-number').textContent  = `P ${current+1}/${QUESTIONS.length}`;
+  document.getElementById('q-emoji').textContent   = q.emoji;
+  document.getElementById('q-text').textContent    = q.q;
+
+  /* Dots */
+  const dotsRow = document.getElementById('dots-row');
+  dotsRow.innerHTML = '';
+  QUESTIONS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    if (i < answers.length) d.classList.add(answers[i] ? 'correct' : 'wrong');
+    else if (i === current) d.classList.add('current');
+    dotsRow.appendChild(d);
+  });
+
+  /* Opciones */
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-label">${LABELS[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    opts.appendChild(btn);
+  });
+
+  /* Limpiar feedback y botón */
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.textContent = '';
+
+  const btn = document.getElementById('btn-next');
+  btn.className = 'btn-next';
+  btn.textContent = current + 1 < QUESTIONS.length ? 'Siguiente pregunta →' : 'Ver resultados 🏆';
+}
+
+/* ── Seleccionar respuesta ── */
+function selectAnswer(i) {
+  if (answered) return;
+  answered = true;
+
+  const q = QUESTIONS[current];
+  const isCorrect = i === q.correct;
+  if (isCorrect) score++;
+  answers.push(isCorrect);
+
+  /* Estilizar botones */
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach((btn, idx) => {
+    btn.disabled = true;
+    const label = btn.querySelector('.opt-label');
+    if (idx === q.correct) {
+      btn.classList.add('correct-ans');
+      label.textContent = '✓';
+    } else if (idx === i && !isCorrect) {
+      btn.classList.add('wrong-ans');
+      label.textContent = '✗';
+    }
+  });
+
+  /* Feedback */
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (isCorrect ? 'ok' : 'fail');
+  fb.textContent = isCorrect ? q.ok : q.fail;
+
+  /* Botón siguiente */
+  document.getElementById('btn-next').classList.add('show');
+
+  /* Actualizar score label */
+  document.getElementById('score-label').textContent = `✅ ${score} correctas`;
+}
+
+/* ── Siguiente pregunta ── */
+function nextQuestion() {
+  current++;
+  if (current < QUESTIONS.length) {
+    show('screen-quiz');
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+
+/* ── Resultado ── */
+function showResult() {
+  show('screen-result');
+
+  const ring = document.getElementById('result-ring');
+  const num  = document.getElementById('result-score');
+  const msg  = document.getElementById('result-msg');
+
+  num.textContent = score;
+
+  let color, text;
+  if (score >= 9) { color = '#10B981'; text = '¡Eres un experto en el cerebro! 🧠'; }
+  else if (score >= 7) { color = '#60A5FA'; text = '¡Muy buen trabajo! 🌟'; }
+  else if (score >= 5) { color = '#F59E0B'; text = 'Sigue aprendiendo, ¡vas muy bien! 📖'; }
+  else                 { color = '#F87171'; text = '¡Inténtalo nuevamente, tú puedes! 💪'; }
+
+  ring.style.border = `4px solid ${color}`;
+  ring.style.boxShadow = `0 0 40px ${color}44`;
+  num.style.color  = color;
+  msg.style.color  = color;
+  msg.textContent  = text;
+
+  /* Breakdown dots */
+  const bd = document.getElementById('bd-dots');
+  bd.innerHTML = '';
+  answers.forEach((correct, i) => {
+    const d = document.createElement('div');
+    d.className = 'bd-dot ' + (correct ? 'c' : 'w');
+    d.textContent = i + 1;
+    bd.appendChild(d);
+  });
+}
+
+/* ── Reiniciar ── */
+function restartQuiz() { startQuiz(); }
+</script>
+</body>
+</html>
